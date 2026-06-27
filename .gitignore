@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+coverage/
+.npm-cache/
+*.log
+.DS_Store
+.idea/
+.vscode/
+.agents/
+.codex/
+tmp/
+.pg-test/
+.repo-git/

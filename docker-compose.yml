@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: siare
+      POSTGRES_USER: siare
+      POSTGRES_PASSWORD: siare
+    ports:
+      - '5432:5432'
+    volumes:
+      - siare_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U siare -d siare']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  siare_postgres_data:
