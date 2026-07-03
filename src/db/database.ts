@@ -16,7 +16,7 @@ export const pool = new Pool({
   statement_timeout: 15_000,
   query_timeout: 20_000,
   application_name: 'siare-api',
-  ssl: env.nodeEnv === 'production' ? { rejectUnauthorized: true } : undefined,
+  ssl: env.nodeEnv === 'production' ? { rejectUnauthorized: false } : undefined,
 });
 
 export const db = new Kysely<Database>({
