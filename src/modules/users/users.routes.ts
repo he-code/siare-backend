@@ -1,7 +1,7 @@
 import { Type, type Static } from '@sinclair/typebox';
 import type { FastifyInstance } from 'fastify';
 import { authenticate, authorize } from '../../http/auth-guard.js';
-import { IdParams, PageQuery, nullableString } from '../../http/schemas.js';
+import { IdParams, PaginationFields, nullableString } from '../../http/schemas.js';
 import { UsersService } from './users.service.js';
 
 const RoleSchema = Type.Union([
@@ -22,10 +22,13 @@ const CreateUserBody = Type.Object(
   { additionalProperties: false },
 );
 const UpdateUserBody = Type.Partial(CreateUserBody, { additionalProperties: false });
-const ListUsersQuery = Type.Intersect([
-  PageQuery,
-  Type.Object({ active: Type.Optional(Type.Boolean()) }, { additionalProperties: false }),
-]);
+const ListUsersQuery = Type.Object(
+  {
+    ...PaginationFields,
+    active: Type.Optional(Type.Boolean()),
+  },
+  { additionalProperties: false },
+);
 
 export const usersRoutes = async (app: FastifyInstance) => {
   const service = new UsersService();

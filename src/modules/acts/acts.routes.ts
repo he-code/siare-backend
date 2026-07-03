@@ -1,7 +1,7 @@
 import { Type, type Static } from '@sinclair/typebox';
 import type { FastifyInstance } from 'fastify';
 import { authenticate, authorize } from '../../http/auth-guard.js';
-import { IdParams, PageQuery, nullableString } from '../../http/schemas.js';
+import { IdParams, PaginationFields, nullableString } from '../../http/schemas.js';
 import { ActsService } from './acts.service.js';
 import { ActPdfService } from './pdf.service.js';
 
@@ -51,9 +51,9 @@ const CancelBody = Type.Object(
   { reason: Type.String({ minLength: 5, maxLength: 3000 }) },
   { additionalProperties: false },
 );
-const ListActsQuery = Type.Intersect([
-  PageQuery,
-  Type.Object({
+const ListActsQuery = Type.Object(
+  {
+    ...PaginationFields,
     period: Type.Optional(Type.Integer({ minimum: 2000, maximum: 2200 })),
     status: Type.Optional(
       Type.Union([Type.Literal('borrador'), Type.Literal('emitida'), Type.Literal('anulada')]),
@@ -61,8 +61,9 @@ const ListActsQuery = Type.Intersect([
     number: Type.Optional(Type.String({ maxLength: 100 })),
     dateFrom: Type.Optional(Type.String({ format: 'date' })),
     dateTo: Type.Optional(Type.String({ format: 'date' })),
-  }),
-]);
+  },
+  { additionalProperties: false },
+);
 
 export const actsRoutes = async (app: FastifyInstance) => {
   const service = new ActsService();

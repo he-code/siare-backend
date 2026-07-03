@@ -1,24 +1,34 @@
 import { Type, type Static, type TSchema } from '@sinclair/typebox';
 import type { FastifyInstance } from 'fastify';
 import { authenticate, authorize } from '../../http/auth-guard.js';
-import { IdParams, PageQuery, nullableString } from '../../http/schemas.js';
+import { IdParams, PageQuery, PaginationFields, nullableString } from '../../http/schemas.js';
 import { CatalogsService } from './catalogs.service.js';
 
-const ListWithActive = Type.Intersect([PageQuery, Type.Object({ active: Type.Optional(Type.Boolean()) })]);
-const ListLeaders = Type.Intersect([
-  PageQuery,
-  Type.Object({
+const ListWithActive = Type.Object(
+  {
+    ...PaginationFields,
+    active: Type.Optional(Type.Boolean()),
+  },
+  { additionalProperties: false },
+);
+
+const ListLeaders = Type.Object(
+  {
+    ...PaginationFields,
     institutionId: Type.Optional(Type.String({ pattern: '^[1-9][0-9]*$' })),
     active: Type.Optional(Type.Boolean()),
-  }),
-]);
-const ListMaterials = Type.Intersect([
-  PageQuery,
-  Type.Object({
+  },
+  { additionalProperties: false },
+);
+
+const ListMaterials = Type.Object(
+  {
+    ...PaginationFields,
     categoryId: Type.Optional(Type.String({ pattern: '^[1-9][0-9]*$' })),
     active: Type.Optional(Type.Boolean()),
-  }),
-]);
+  },
+  { additionalProperties: false },
+);
 
 const NamedBody = Type.Object(
   {

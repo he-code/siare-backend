@@ -392,21 +392,24 @@ export class CatalogsService {
   }
 
   async createMaterial(input: MaterialInput, actorId: string, ip: string) {
-    const row = await db
-      .insertInto('materials')
-      .values({
-        category_id: input.categoryId,
-        measurement_unit_id: input.measurementUnitId,
-        code: cleanOptional(input.code),
-        name: input.name.trim(),
-        description: cleanOptional(input.description),
-        minimum_stock: input.minimumStock ?? null,
-        last_unit_value: null,
-        current_stock: 0,
-        active: input.active ?? true,
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow();
+    const values = {
+      category_id: input.categoryId,
+      measurement_unit_id: input.measurementUnitId,
+      code: cleanOptional(input.code),
+      name: input.name.trim(),
+      description: cleanOptional(input.description),
+      minimum_stock: input.minimumStock ?? null,
+      last_unit_value: null,
+      current_stock: 0,
+      active: input.active ?? true,
+    };
+    await this.ensureMaterialUnique(db, {
+      categoryId: values.category_id,
+      measurementUnitId: values.measurement_unit_id,
+      code: values.code,
+      name: values.name,
+    });
+    const row = await db.insertInto('materials').values(values).returningAll().executeTakeFirstOrThrow();
     await this.writeAudit(db, actorId, 'materials.create', 'material', row.id, ip);
     return row;
   }
@@ -414,17 +417,38 @@ export class CatalogsService {
   async updateMaterial(id: string, input: Partial<MaterialInput>, actorId: string, ip: string) {
     const current = await db.selectFrom('materials').selectAll().where('id', '=', id).executeTakeFirst();
     if (!current) throw new NotFoundError('Material');
+
+    const next = {
+      category_id: input.categoryId ?? current.category_id,
+      measurement_unit_id: input.measurementUnitId ?? current.measurement_unit_id,
+      code: input.code === undefined ? current.code : cleanOptional(input.code),
+      name: input.name?.trim() ?? current.name,
+      description: input.description === undefined ? current.description : cleanOptional(input.description),
+      minimum_stock: input.minimumStock === undefined ? current.minimum_stock : input.minimumStock,
+      active: input.active ?? current.active,
+    };
+
+    if (
+      input.categoryId !== undefined ||
+      input.measurementUnitId !== undefined ||
+      input.code !== undefined ||
+      input.name !== undefined
+    ) {
+      await this.ensureMaterialUnique(
+        db,
+        {
+          categoryId: next.category_id,
+          measurementUnitId: next.measurement_unit_id,
+          code: next.code,
+          name: next.name,
+        },
+        id,
+      );
+    }
+
     const row = await db
       .updateTable('materials')
-      .set({
-        category_id: input.categoryId ?? current.category_id,
-        measurement_unit_id: input.measurementUnitId ?? current.measurement_unit_id,
-        code: input.code === undefined ? current.code : cleanOptional(input.code),
-        name: input.name?.trim() ?? current.name,
-        description: input.description === undefined ? current.description : cleanOptional(input.description),
-        minimum_stock: input.minimumStock === undefined ? current.minimum_stock : input.minimumStock,
-        active: input.active ?? current.active,
-      })
+      .set(next)
       .where('id', '=', id)
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -513,6 +537,42 @@ export class CatalogsService {
       portal_url: cleanOptional(input.portalUrl),
       notes: cleanOptional(input.notes),
     };
+  }
+
+  private async ensureMaterialUnique(
+    client: Kysely<Database> | Transaction<Database>,
+    input: { categoryId: string; measurementUnitId: string; code?: string | null; name: string },
+    excludeId?: string,
+  ) {
+    const code = cleanOptional(input.code);
+    if (code) {
+      let codeQuery = client
+        .selectFrom('materials')
+        .select(['id', 'code', 'name'])
+        .where(sql<boolean>`lower(code) = lower(${code})`);
+      if (excludeId) codeQuery = codeQuery.where('id', '!=', excludeId);
+      const duplicatedCode = await codeQuery.executeTakeFirst();
+      if (duplicatedCode)
+        throw new ConflictError(
+          `Ya existe un material con el código ${code}. Use el material existente para que el stock se acumule en un solo registro.`,
+          'MATERIAL_ALREADY_EXISTS',
+        );
+    }
+
+    let identityQuery = client
+      .selectFrom('materials')
+      .select(['id', 'name'])
+      .where('category_id', '=', input.categoryId)
+      .where('measurement_unit_id', '=', input.measurementUnitId)
+      .where(sql<boolean>`lower(btrim(name)) = lower(btrim(${input.name.trim()}))`)
+      .where('active', '=', true);
+    if (excludeId) identityQuery = identityQuery.where('id', '!=', excludeId);
+    const duplicatedIdentity = await identityQuery.executeTakeFirst();
+    if (duplicatedIdentity)
+      throw new ConflictError(
+        `Ya existe un material activo llamado ${input.name.trim()} con la misma categoría y unidad. Seleccione ese material en el acta de ingreso para sumar nuevas existencias, aunque cambie el proveedor, la orden de compra o el proceso.`,
+        'MATERIAL_ALREADY_EXISTS',
+      );
   }
 
   private async writeAudit(

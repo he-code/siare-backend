@@ -8,7 +8,7 @@ API de **SIARE — Sistema de Inventario y Actas de Recepción y Entrega**, cons
 - Usuarios, autoridades distritales, instituciones, líderes, categorías, unidades, materiales y procesos de adquisición.
 - Actas de ingreso y entrega con ciclo `borrador → emitida → anulada`.
 - Numeración anual e independiente: `MINEDUC-CZ5-UDA-{ING|ENT}-001-2026`.
-- Inventario transaccional, ajustes trazables e historial inmutable.
+- Inventario transaccional con existencias consultables, alertas de stock bajo e historial inmutable; los ajustes manuales quedan bloqueados por seguridad.
 - Cálculo decimal de subtotal, IVA y total por línea.
 - PDF institucional generado en memoria para actas emitidas.
 - OpenAPI interactivo en `/docs`.
@@ -68,7 +68,8 @@ npm start            # ejecuta la compilación de producción
 3. Crear borrador con `POST /api/v1/actas-ingreso` o `/actas-entrega`.
 4. Emitir con `POST /api/v1/{tipo}/:id/emitir`. Solo aquí se asigna número y cambia stock.
 5. Anular con `POST /api/v1/{tipo}/:id/anular` y un motivo. El registro y su número se conservan.
-6. Descargar el PDF con `GET /api/v1/{tipo}/:id/pdf`.
+6. Consultar existencias con `GET /api/v1/inventario/existencias` y alertas con `GET /api/v1/inventario/alertas-bajo-stock`.
+7. Descargar el PDF con `GET /api/v1/{tipo}/:id/pdf`.
 
 La especificación completa de cuerpos, filtros y respuestas se mantiene automáticamente en OpenAPI.
 
@@ -77,3 +78,7 @@ La especificación completa de cuerpos, filtros y respuestas se mantiene automá
 Use secretos aleatorios de al menos 32 caracteres, HTTPS, una cuenta PostgreSQL con permisos mínimos y un origen CORS explícito. Ejecute las migraciones como una tarea previa al despliegue. El contenedor de la aplicación corre sin privilegios y no incluye dependencias de desarrollo.
 
 Consulte [SECURITY.md](SECURITY.md) antes de exponer el servicio a Internet.
+
+## Criterio de materiales
+
+El material es un maestro único del inventario. Si se compra o recibe el mismo material desde otro proveedor, orden de compra o proceso de adquisición, se debe reutilizar el mismo material en el acta de ingreso para sumar existencias. El proveedor, la orden y el proceso pertenecen al proceso/adquisición y al acta, no crean un material nuevo. El backend bloquea duplicados activos por código y por combinación de nombre normalizado + categoría + unidad de medida.

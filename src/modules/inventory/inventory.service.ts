@@ -1,6 +1,4 @@
-import { Decimal } from 'decimal.js';
 import { sql } from 'kysely';
-import { BadRequestError, ConflictError, NotFoundError } from '../../core/errors.js';
 import { pageOf, paginated, type PageInput } from '../../core/pagination.js';
 import type { MovementType } from '../../core/roles.js';
 import { db } from '../../db/database.js';
@@ -12,7 +10,59 @@ interface MovementQuery extends PageInput {
   dateTo?: string;
 }
 
+interface StockQuery extends PageInput {
+  search?: string;
+  categoryId?: string;
+  active?: boolean;
+  lowStock?: boolean;
+}
+
 export class InventoryService {
+  async listStock(input: StockQuery) {
+    const { page, pageSize, offset } = pageOf(input);
+    const query = this.stockBaseQuery(input);
+
+    const [data, count] = await Promise.all([
+      query
+        .select([
+          'materials.id',
+          'materials.code',
+          'materials.name',
+          'materials.description',
+          'materials.current_stock',
+          'materials.minimum_stock',
+          'materials.last_unit_value',
+          'materials.active',
+          'materials.category_id',
+          'categories.name as category_name',
+          'materials.measurement_unit_id',
+          'measurement_units.name as unit_name',
+          'measurement_units.abbreviation as unit_abbreviation',
+          sql<boolean>`(
+            materials.active
+            and materials.minimum_stock is not null
+            and materials.current_stock <= materials.minimum_stock
+          )`.as('low_stock'),
+          sql<string>`case
+            when materials.minimum_stock is not null and materials.current_stock < materials.minimum_stock
+            then (materials.minimum_stock - materials.current_stock)::text
+            else '0'
+          end`.as('stock_deficit'),
+        ])
+        .orderBy('materials.name')
+        .limit(pageSize)
+        .offset(offset)
+        .execute(),
+      query.select(sql<number>`count(*)::int`.as('total')).executeTakeFirstOrThrow(),
+    ]);
+
+    return paginated(data, count.total, page, pageSize);
+  }
+
+  async listLowStockAlerts(input: Omit<StockQuery, 'active' | 'lowStock'>) {
+    return this.listStock({ ...input, active: true, lowStock: true });
+  }
+
   async listMovements(input: MovementQuery) {
     const { page, pageSize, offset } = pageOf(input);
     let query = db
@@ -60,71 +110,6 @@ export class InventoryService {
     return paginated(data, count.total, page, pageSize);
   }
 
-  async adjust(materialId: string, differenceInput: number, reason: string, userId: string, ip: string) {
-    const difference = new Decimal(differenceInput).toDecimalPlaces(2);
-    if (difference.isZero()) throw new BadRequestError('El ajuste no puede ser cero');
-    return db
-      .transaction()
-      .setIsolationLevel('serializable')
-      .execute(async (trx) => {
-        const material = await trx
-          .selectFrom('materials')
-          .select(['id', 'name', 'current_stock', 'active'])
-          .where('id', '=', materialId)
-          .forUpdate()
-          .executeTakeFirst();
-        if (!material) throw new NotFoundError('Material');
-        if (!material.active) throw new ConflictError('No se puede ajustar un material inactivo');
-        const next = new Decimal(material.current_stock).plus(difference);
-        if (next.isNegative())
-          throw new ConflictError('El ajuste produciría stock negativo', 'INSUFFICIENT_STOCK');
-        const newStock = next.toFixed(2);
-        const adjustment = await trx
-          .insertInto('inventory_adjustments')
-          .values({
-            material_id: materialId,
-            user_id: userId,
-            difference: difference.toFixed(2),
-            previous_stock: material.current_stock,
-            new_stock: newStock,
-            reason: reason.trim(),
-          })
-          .returningAll()
-          .executeTakeFirstOrThrow();
-        await trx
-          .updateTable('materials')
-          .set({ current_stock: newStock })
-          .where('id', '=', materialId)
-          .execute();
-        await trx
-          .insertInto('inventory_movements')
-          .values({
-            material_id: materialId,
-            user_id: userId,
-            movement_type: 'ajuste',
-            quantity: difference.abs().toFixed(2),
-            previous_stock: material.current_stock,
-            new_stock: newStock,
-            reference_type: 'ajuste',
-            reference_id: adjustment.id,
-            notes: reason.trim(),
-          })
-          .execute();
-        await trx
-          .insertInto('audit_logs')
-          .values({
-            user_id: userId,
-            action: 'inventory.adjust',
-            entity_type: 'inventory_adjustment',
-            entity_id: adjustment.id,
-            ip,
-            metadata: { difference: difference.toFixed(2) },
-          })
-          .execute();
-        return adjustment;
-      });
-  }
-
   async summary() {
     const totals = await db
       .selectFrom('materials')
@@ -149,6 +134,27 @@ export class InventoryService {
       .orderBy('inventory_movements.created_at', 'desc')
       .limit(10)
       .execute();
-    return { ...totals, latestMovements: latest };
+    const alerts = await this.listLowStockAlerts({ page: 1, pageSize: 10 });
+    return { ...totals, lowStockAlerts: alerts.data, latestMovements: latest };
+  }
+
+  private stockBaseQuery(input: StockQuery) {
+    let query = db
+      .selectFrom('materials')
+      .innerJoin('categories', 'categories.id', 'materials.category_id')
+      .innerJoin('measurement_units', 'measurement_units.id', 'materials.measurement_unit_id');
+
+    if (input.search) {
+      const term = `%${input.search.trim()}%`;
+      query = query.where((eb) => eb.or([eb('materials.name', 'ilike', term), eb('materials.code', 'ilike', term)]));
+    }
+    if (input.categoryId) query = query.where('materials.category_id', '=', input.categoryId);
+    if (input.active !== undefined) query = query.where('materials.active', '=', input.active);
+    if (input.lowStock)
+      query = query
+        .where('materials.minimum_stock', 'is not', null)
+        .whereRef('materials.current_stock', '<=', 'materials.minimum_stock');
+
+    return query;
   }
 }
