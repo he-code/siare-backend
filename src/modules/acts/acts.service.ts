@@ -580,6 +580,7 @@ export class ActsService {
         'leaders.position as leader_position',
         'delivery_acts.user_id',
         'users.name as registered_by',
+        'users.position as registered_by_position',
         'delivery_acts.period',
         'delivery_acts.sequence',
         'delivery_acts.act_number',

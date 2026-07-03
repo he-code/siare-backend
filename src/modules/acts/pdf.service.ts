@@ -76,6 +76,7 @@ export class ActPdfService {
       doc,
       'Recibe conforme',
       '___________________________',
+      undefined,
       'Registra en el sistema',
       act.registered_by,
     );
@@ -123,7 +124,15 @@ export class ActPdfService {
     this.sectionTitle(doc, '3. Observación');
     this.observationBox(doc, act.notes ?? DELIVERY_OBSERVATION);
     this.sectionTitle(doc, '4. Firmas de responsabilidad');
-    this.signatureBox(doc, 'Entrega conforme', act.registered_by, 'Recibe conforme', leaderName || '-');
+    this.signatureBox(
+      doc,
+      'Entrega conforme',
+      act.registered_by,
+      act.registered_by_position ?? '-',
+      'Recibe conforme',
+      leaderName || '-',
+      institution['name'] ?? act.institution_name ?? '-',
+    );
     return this.finish(doc, reply, act.act_number ?? `entrega-${id}`);
   }
 
@@ -298,19 +307,21 @@ export class ActPdfService {
     doc: PDFKit.PDFDocument,
     leftTitle: string,
     leftName: unknown,
+    leftDetail: unknown,
     rightTitle: string,
     rightName: unknown,
+    rightDetail?: unknown,
   ) {
     const left = doc.page.margins.left;
     const totalWidth = this.contentWidth(doc);
     const columnWidth = totalWidth / 2;
-    const height = 70;
+    const height = rightDetail === undefined ? 70 : 82;
     this.ensureSpace(doc, height);
     const y = doc.y;
     [
-      { x: left, title: leftTitle, name: leftName },
-      { x: left + columnWidth, title: rightTitle, name: rightName },
-    ].forEach(({ x, title, name }) => {
+      { x: left, title: leftTitle, name: leftName, detail: leftDetail },
+      { x: left + columnWidth, title: rightTitle, name: rightName, detail: rightDetail },
+    ].forEach(({ x, title, name, detail }) => {
       doc.rect(x, y, columnWidth, height).strokeColor('#aeb8c2').stroke();
       doc
         .fillColor('#111827')
@@ -328,17 +339,34 @@ export class ActPdfService {
       doc
         .font('Helvetica')
         .fontSize(7.8)
-        .text(`Nombre: ${escapePdfText(name)}`, x + 8, y + 47, {
+        .text(escapePdfText(name), x + 8, y + 47, {
           width: columnWidth - 16,
           align: 'center',
         });
+      if (detail !== undefined) {
+        doc
+          .font('Helvetica')
+          .fontSize(7.4)
+          .text(escapePdfText(detail), x + 8, y + 59, {
+            width: columnWidth - 16,
+            align: 'center',
+          });
+      }
     });
     doc.y = y + height;
   }
 
   private sectionTitle(doc: PDFKit.PDFDocument, title: string) {
     this.ensureSpace(doc, 22);
-    doc.moveDown(0.45).fillColor('#1f2937').font('Helvetica-Bold').fontSize(9).text(escapePdfText(title));
+    doc.moveDown(0.45);
+    doc
+      .fillColor('#1f2937')
+      .font('Helvetica-Bold')
+      .fontSize(9)
+      .text(escapePdfText(title), doc.page.margins.left, doc.y, {
+        width: this.contentWidth(doc),
+        align: 'left',
+      });
     doc.moveDown(0.25);
   }
 
