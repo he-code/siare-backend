@@ -3,7 +3,11 @@ import path from 'node:path';
 import pg from 'pg';
 import { env } from '../src/config/env.js';
 
-const pool = new pg.Pool({ connectionString: env.databaseUrl, max: 1 });
+const pool = new pg.Pool({
+  connectionString: env.databaseUrl,
+  max: 1,
+  ssl: env.nodeEnv === 'production' ? { rejectUnauthorized: false } : undefined,
+});
 
 const run = async () => {
   const client = await pool.connect();
