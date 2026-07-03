@@ -146,7 +146,9 @@ export class InventoryService {
 
     if (input.search) {
       const term = `%${input.search.trim()}%`;
-      query = query.where((eb) => eb.or([eb('materials.name', 'ilike', term), eb('materials.code', 'ilike', term)]));
+      query = query.where((eb) =>
+        eb.or([eb('materials.name', 'ilike', term), eb('materials.code', 'ilike', term)]),
+      );
     }
     if (input.categoryId) query = query.where('materials.category_id', '=', input.categoryId);
     if (input.active !== undefined) query = query.where('materials.active', '=', input.active);
