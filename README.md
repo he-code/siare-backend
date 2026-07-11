@@ -1,4 +1,3 @@
-````md
 # SIARE Backend
 
 API REST para la gestión institucional de inventario y actas administrativas.
@@ -9,7 +8,7 @@ El backend proporciona servicios para gestionar usuarios, permisos, institucione
 
 ---
 
-## 🚀 Características principales
+## 🚀Características principales
 
 - Gestión de usuarios y autenticación.
 - Control de acceso basado en roles (RBAC).
