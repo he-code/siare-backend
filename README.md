@@ -1,196 +1,267 @@
+````md
 # SIARE Backend
 
-API REST de **SIARE - Sistema de Inventario y Actas de Recepción y Entrega**, construida con Node.js, TypeScript, Fastify y PostgreSQL.
+API REST para la gestión institucional de inventario y actas administrativas.
 
-Este backend expone la lógica de negocio para inventario institucional, actas documentales, catálogos administrativos, usuarios, roles, autenticación y generación de PDF. La API ya está desplegada en Railway y puede ser consumida por el frontend Vue de [siare-frontend](https://github.com/he-code/siare-frontend).
+SIARE (Sistema Institucional de Administración de Recursos Educativos) es una solución Full Stack orientada a digitalizar procesos relacionados con el control de materiales, movimientos de inventario y generación de documentación administrativa.
 
-## Enlaces
+El backend proporciona servicios para gestionar usuarios, permisos, instituciones, materiales y actas, manteniendo una arquitectura desacoplada del frontend y aplicando controles de seguridad, validación y trazabilidad.
 
-| Recurso | URL |
-|---|---|
-| Repositorio backend | https://github.com/he-code/siare-backend |
-| Repositorio frontend | https://github.com/he-code/siare-frontend |
-| API desplegada | https://siare-backend-production.up.railway.app |
-| Health check | https://siare-backend-production.up.railway.app/health |
-| OpenAPI / Swagger | https://siare-backend-production.up.railway.app/docs |
+---
 
-## Alcance
+## 🚀 Características principales
 
-- Autenticación con access token, refresh token en cookie `HttpOnly` y roles `administrador`, `asistente_actas` y `consulta`.
-- Usuarios, autoridades distritales, instituciones, líderes, categorías, unidades de medida, materiales y procesos de adquisición.
-- Actas de ingreso y actas de entrega-recepción con ciclo `borrador -> emitida -> anulada`.
-- Numeración anual e independiente: `MINEDUC-CZ5-UDA-{ING|ENT}-001-2026`.
-- Inventario transaccional con existencias, alertas de bajo stock e historial inmutable.
-- Bloqueo de ajustes manuales de stock por seguridad.
-- Cálculo decimal de subtotal, IVA y total por línea.
-- PDF institucional generado en memoria para actas emitidas.
-- OpenAPI interactivo en `/docs`.
+- Gestión de usuarios y autenticación.
+- Control de acceso basado en roles (RBAC).
+- Administración de instituciones.
+- Gestión de materiales e inventario.
+- Registro de actas de ingreso.
+- Registro de actas de entrega-recepción.
+- Generación de documentos PDF.
+- Control de movimientos administrativos.
+- Validación estricta de datos de entrada.
+- Registro de acciones sensibles mediante bitácora.
+- API documentada mediante OpenAPI.
 
-## Tecnologías
+---
 
-- Node.js 22+
-- TypeScript estricto
-- Fastify
-- PostgreSQL
-- Kysely
-- Docker
-- Vitest
-- ESLint y Prettier
-- PDFKit
+## 🏗 Arquitectura
 
-## Arquitectura
+SIARE Backend está construido como una API REST independiente del frontend, permitiendo una arquitectura desacoplada y escalable.
 
-```txt
+La aplicación está organizada por módulos funcionales:
+
+```text
 src/
-|-- config/          # Configuración validada por entorno
-|-- core/            # Errores, roles y utilidades puras
-|-- db/              # Conexión y tipos de PostgreSQL
-|-- http/            # Validación y controles HTTP
-`-- modules/
-    |-- auth/
-    |-- users/
-    |-- catalogs/
-    |-- acts/
-    `-- inventory/
+├── modules/
+│   ├── auth/
+│   ├── users/
+│   ├── materials/
+│   ├── institutions/
+│   ├── acts/
+│   └── ...
+├── database/
+├── middleware/
+├── utils/
+└── app/
 ```
 
-La explicación de decisiones y transacciones está en [docs/architecture.md](docs/architecture.md). La cobertura del documento funcional está en [docs/requirements-traceability.md](docs/requirements-traceability.md).
+El frontend consume los servicios mediante endpoints REST.
 
-## Inicio local
+---
 
-Requisitos:
+## 🛠 Tecnologías utilizadas
 
-- Node.js 22 o superior
+### Backend
+
+- Node.js 22+
+- TypeScript (modo estricto)
+- Fastify
+
+### Base de datos
+
+- PostgreSQL
+- Kysely (SQL Query Builder)
+
+### Generación de documentos
+
+- PDFKit
+
+### Calidad y pruebas
+
+- Vitest
+- ESLint
+- Prettier
+
+### Infraestructura
+
 - Docker
-- npm
+
+---
+
+## 🔐 Seguridad
+
+El sistema implementa múltiples capas de seguridad para proteger la información y garantizar la integridad de los datos.
+
+### Autenticación
+
+- Contraseñas protegidas mediante **Argon2id**.
+- Access Tokens de corta duración.
+- Refresh Tokens opacos, rotativos y revocables.
+- Refresh Tokens almacenados como **SHA-256**.
+- Cookies **HttpOnly**, **SameSite=Strict** y **Secure** en producción.
+
+### Autorización
+
+El sistema implementa **RBAC (Role-Based Access Control)**.
+
+| Rol | Descripción |
+|------|-------------|
+| `admin` | Administración completa del sistema. |
+| `asistente_actas` | Gestión operativa de actas e inventario. |
+| `consulta` | Acceso de solo lectura. |
+
+Cada petición verifica el estado y permisos actuales del usuario.
+
+### Protección de la API
+
+- Rate limiting global.
+- Rate limiting específico para autenticación.
+- CORS mediante lista blanca.
+- Cabeceras HTTP de seguridad.
+- Límite del tamaño de las peticiones.
+- Validación estricta de esquemas (`additionalProperties: false`).
+- Prevención de Mass Assignment.
+- Consultas SQL parametrizadas mediante Kysely.
+- Ocultamiento de errores internos.
+- Redacción automática de cookies, tokens y contraseñas en los logs.
+
+### Integridad de datos
+
+La base de datos utiliza:
+
+- Claves foráneas.
+- Restricciones `CHECK`.
+- Índices únicos.
+- Transacciones.
+- Restricciones de integridad referencial.
+
+---
+
+## 📚 Documentación de la API
+
+La API cuenta con documentación interactiva mediante OpenAPI.
+
+**Producción**
+
+https://siare-backend-production.up.railway.app/docs
+
+---
+
+## 📄 Generación de documentos
+
+El sistema genera documentos oficiales en formato PDF mediante **PDFKit**.
+
+Actualmente soporta:
+
+- Actas de ingreso.
+- Actas de entrega-recepción.
+
+Los documentos mantienen un formato consistente y validado para procesos administrativos.
+
+---
+
+## 🧪 Pruebas automatizadas
+
+El proyecto utiliza **Vitest** para validar procesos críticos.
+
+Entre las pruebas implementadas se encuentran:
+
+- Generación correcta de documentos PDF.
+- Validación del formato PDF.
+- Verificación del número de páginas generadas.
+- Pruebas de servicios críticos del sistema.
+
+Ejecutar pruebas:
+
+```bash
+npm run test
+```
+
+---
+
+## ⚙️ Instalación
+
+### Requisitos
+
+- Node.js 22 o superior.
+- PostgreSQL.
+- Docker (opcional).
+
+### Clonar el repositorio
 
 ```bash
 git clone https://github.com/he-code/siare-backend.git
+
 cd siare-backend
-cp .env.example .env
-docker compose up -d postgres
-npm ci
-npm run db:migrate
-npm run db:seed
+```
+
+### Instalar dependencias
+
+```bash
+npm install
+```
+
+### Configurar variables de entorno
+
+Crear un archivo `.env`.
+
+Ejemplo:
+
+```env
+DATABASE_URL=
+JWT_ACCESS_SECRET=
+COOKIE_SECURE=false
+CORS_ORIGINS=
+```
+
+---
+
+## ▶️ Ejecutar el proyecto
+
+Modo desarrollo:
+
+```bash
 npm run dev
 ```
 
-Antes de ejecutar `db:seed`, cambiar `ADMIN_PASSWORD` en `.env`. La API local queda en:
-
-```txt
-http://localhost:3000
-```
-
-Rutas útiles:
-
-```txt
-http://localhost:3000/health
-http://localhost:3000/docs
-http://localhost:3000/api/v1
-```
-
-## Variables de entorno
-
-| Variable | Uso |
-|---|---|
-| `NODE_ENV` | Entorno de ejecución |
-| `HOST` | Host donde escucha Fastify |
-| `PORT` | Puerto HTTP |
-| `LOG_LEVEL` | Nivel de logs |
-| `DATABASE_URL` | Conexión PostgreSQL |
-| `DATABASE_POOL_MAX` | Máximo de conexiones del pool |
-| `JWT_ACCESS_SECRET` | Secreto JWT de al menos 32 caracteres |
-| `ACCESS_TOKEN_TTL` | Duración del access token |
-| `REFRESH_TOKEN_DAYS` | Duración del refresh token |
-| `COOKIE_SECURE` | Cookies solo sobre HTTPS en producción |
-| `CORS_ORIGINS` | Orígenes permitidos, separados por coma |
-| `ADMIN_NAME` | Nombre del administrador inicial |
-| `ADMIN_EMAIL` | Email del administrador inicial |
-| `ADMIN_PASSWORD` | Password inicial para `db:seed` |
-
-Ejemplo local:
-
-```env
-NODE_ENV=development
-HOST=0.0.0.0
-PORT=3000
-DATABASE_URL=postgresql://siare:siare@localhost:5432/siare
-JWT_ACCESS_SECRET=replace-with-at-least-32-random-characters
-COOKIE_SECURE=false
-CORS_ORIGINS=http://localhost:5173
-ADMIN_EMAIL=admin@siare.local
-ADMIN_PASSWORD=replace-with-a-strong-password
-```
-
-En producción, usar secretos reales, `COOKIE_SECURE=true`, una base PostgreSQL administrada y `CORS_ORIGINS` con la URL pública exacta del frontend.
-
-## Scripts
-
-| Comando | Descripción |
-|---|---|
-| `npm run dev` | Desarrollo con recarga usando `tsx watch` |
-| `npm run build` | Compila TypeScript a `dist/` |
-| `npm start` | Ejecuta la compilación de producción |
-| `npm run typecheck` | Valida tipos |
-| `npm run lint` | Ejecuta ESLint |
-| `npm run test` | Ejecuta pruebas con Vitest |
-| `npm run db:migrate` | Aplica migraciones pendientes |
-| `npm run db:seed` | Crea el administrador inicial si no existe |
-| `npm run check` | Tipos, lint, pruebas y build |
-
-Antes de desplegar cambios:
+Compilar:
 
 ```bash
-npm run check
+npm run build
 ```
 
-## Flujo HTTP esencial
+Producción:
 
-1. `POST /api/v1/auth/login` devuelve access token y deja refresh token en cookie `HttpOnly`.
-2. Enviar `Authorization: Bearer <token>` en rutas privadas.
-3. Crear borradores con `POST /api/v1/actas-ingreso` o `POST /api/v1/actas-entrega`.
-4. Emitir con `POST /api/v1/{tipo}/:id/emitir`; solo al emitir se asigna número y cambia el stock.
-5. Anular con `POST /api/v1/{tipo}/:id/anular` y un motivo. El registro y su número se conservan.
-6. Consultar existencias con `GET /api/v1/inventario/existencias`.
-7. Consultar alertas con `GET /api/v1/inventario/alertas-bajo-stock`.
-8. Descargar PDF con `GET /api/v1/{tipo}/:id/pdf`.
-
-La especificación completa de cuerpos, filtros y respuestas se mantiene en Swagger.
-
-## Despliegue en Railway
-
-La API productiva está publicada en:
-
-```txt
-https://siare-backend-production.up.railway.app
+```bash
+npm start
 ```
 
-Configuración recomendada:
+---
 
-- Build: `npm ci && npm run build`
-- Start: `npm start`
-- Migraciones: ejecutar `npm run db:migrate` antes de exponer una nueva versión.
-- Health check: `/health`
-- Documentación: `/docs`
-- Base URL para el frontend: `https://siare-backend-production.up.railway.app/api/v1`
+## 🐳 Docker
 
-Checklist de producción:
+El proyecto incluye configuración para ejecutar la aplicación mediante Docker, facilitando la creación de entornos consistentes entre desarrollo y producción.
 
-- `DATABASE_URL` apunta a PostgreSQL productivo.
-- `JWT_ACCESS_SECRET` es aleatorio y tiene al menos 32 caracteres.
-- `COOKIE_SECURE=true`.
-- `CORS_ORIGINS` contiene la URL exacta del frontend desplegado.
-- `ADMIN_PASSWORD` no usa valores de ejemplo.
-- Las migraciones se ejecutaron correctamente.
+---
 
-## Seguridad del inventario
+## 🚀 Despliegue
 
-El material es un maestro único del inventario. Si se compra o recibe el mismo material desde otro proveedor, orden de compra o proceso de adquisición, se reutiliza el mismo material en el acta de ingreso para sumar existencias.
+### Backend
 
-El proveedor, la orden y el proceso pertenecen al proceso/adquisición y al acta; no crean un material nuevo. El backend bloquea duplicados activos por código y por combinación de nombre normalizado, categoría y unidad de medida.
+Railway
 
-Consultar [SECURITY.md](SECURITY.md) antes de exponer o modificar configuraciones de producción.
+https://siare-backend-production.up.railway.app/docs
 
-## Autor
+### Frontend relacionado
 
-Desarrollado por **he-code** como proyecto de portafolio.
+Repositorio:
+
+https://github.com/he-code/siare-frontend
+
+Aplicación:
+
+https://siare-frontend.vercel.app/
+
+---
+
+## 📌 Hoja de ruta
+
+Algunas mejoras previstas para futuras versiones:
+
+- Incrementar la cobertura de pruebas automatizadas.
+- Incorporar monitoreo y métricas.
+- Nuevos módulos administrativos.
+- Optimización del rendimiento para grandes volúmenes de información.
+
+---
