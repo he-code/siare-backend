@@ -4,7 +4,7 @@
 
 **Institutional Educational Resource Administration System**
 
-API REST segura, modular y escalable para la gestión de inventario y actas administrativas.
+API REST segura, modular y escalable para gestion de inventario y actas administrativas.
 
 [![CI](https://github.com/he-code/siare-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/he-code/siare-backend/actions/workflows/ci.yml)
 ![Node](https://img.shields.io/badge/node-22%2B-339933?logo=node.js&logoColor=white)
@@ -16,52 +16,42 @@ API REST segura, modular y escalable para la gestión de inventario y actas admi
 
 </div>
 
----
+## Overview
 
-## 📋 Overview
-
-SIARE digitaliza procesos administrativos educativos: control de materiales, movimientos de inventario, emisión de actas oficiales y generación de documentos PDF. Construido como una **API REST independiente del frontend**, prioriza **seguridad, integridad de datos y mantenibilidad**.
+SIARE digitaliza procesos administrativos educativos: control de materiales, movimientos de inventario, emision de actas oficiales y generacion de PDF. API REST independiente del frontend, prioriza seguridad, integridad de datos y mantenibilidad.
 
 > Frontend: [siare-frontend](https://github.com/he-code/siare-frontend) | Demo: [siare-frontend.vercel.app](https://siare-frontend.vercel.app/)
 
----
+## Key Features
 
-## ✨ Key Features
+- **Auth & Sessions** — JWT + refresh tokens rotativos y revocables (SHA-256), Argon2id, cookies HttpOnly/SameSite/Secure
+- **RBAC** — 3 roles (`administrador`, `asistente_actas`, `consulta`) verificados por ruta
+- **Inventory Management** — Control de existencias, alertas de stock bajo, movimientos trazables
+- **Acts (Receipt/Delivery)** — Borradores, emision con transacciones SERIALIZABLE, anulacion con movimientos compensatorios
+- **PDF Generation** — Documentos oficiales con PDFKit
+- **Audit Trail** — Bitacora de accesos y mutaciones sensibles
+- **API Documentation** — OpenAPI interactiva en `/docs`
 
-| Feature                     | Details                                                                                                                         |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| **Auth & Sessions**         | JWT access tokens + refresh tokens rotativos y revocables (SHA-256), contraseñas con Argon2id, cookies HttpOnly/SameSite/Secure |
-| **RBAC**                    | 3 roles (`administrador`, `asistente_actas`, `consulta`) verificados por ruta                                                   |
-| **Inventory Management**    | Control de existencias con alertas de stock bajo, movimientos trazables                                                         |
-| **Acts (Receipt/Delivery)** | Borradores, emisión con transacciones SERIALIZABLE, anulación con movimientos compensatorios                                    |
-| **PDF Generation**          | Documentos oficiales formateados con PDFKit                                                                                     |
-| **Audit Trail**             | Bitácora de accesos y mutaciones sensibles                                                                                      |
-| **API Documentation**       | OpenAPI interactiva en `/docs`                                                                                                  |
-
----
-
-## 🏗 Architecture
+## Architecture
 
 ```
 src/
 ├── modules/
-│   ├── auth/        🔐 Autenticación y sesiones
-│   ├── users/       👥 Gestión de usuarios
-│   ├── acts/        📄 Actas de ingreso y entrega
-│   ├── inventory/   📦 Inventario y movimientos
-│   └── catalogs/    📁 Categorías, unidades, instituciones
-├── core/            ⚙️ Roles, paginación, errores
-├── http/            🛡️ Guards, esquemas de validación
-├── db/              🗄️ Conexión y tipos de base de datos
-├── config/          🔧 Variables de entorno
-└── app/             🚀 Bootstrap de Fastify
+│   ├── auth/        Autenticacion y sesiones
+│   ├── users/       Gestion de usuarios
+│   ├── acts/        Actas de ingreso y entrega
+│   ├── inventory/   Inventario y movimientos
+│   └── catalogs/    Categorias, unidades, instituciones
+├── core/            Roles, paginacion, errores
+├── http/            Guards, esquemas de validacion
+├── db/              Conexion y tipos de base de datos
+├── config/          Variables de entorno
+└── app/             Bootstrap de Fastify
 ```
 
-API REST desacoplada con módulos independientes por dominio. Base de datos como fuente de verdad con PostgreSQL relacional.
+API REST desacoplada con modulos independientes por dominio. Base de datos como fuente de verdad con PostgreSQL relacional.
 
----
-
-## 🛠 Tech Stack
+## Tech Stack
 
 | Layer          | Technology                                                                         |
 | -------------- | ---------------------------------------------------------------------------------- |
@@ -78,56 +68,36 @@ API REST desacoplada con módulos independientes por dominio. Base de datos como
 | **Infra**      | Docker, GitHub Actions CI                                                          |
 | **Deploy**     | Railway                                                                            |
 
-**CI Pipeline:** `format:check` → `typecheck` → `lint` → `test` → `build` → `audit`
+**CI Pipeline:** `format:check` -> `typecheck` -> `lint` -> `test` -> `build` -> `audit`
 
----
+## Security
 
-## 🔐 Security Highlights
+- Passwords hashed with Argon2id — never logged or returned
+- Access JWT (short-lived) + opaque refresh tokens (rotative, revocable, SHA-256 stored)
+- HttpOnly, SameSite=Strict cookies; Secure in production
+- Rate limiting global (120 req/min) + stricter for login
+- CORS whitelist-based; closed validation schemas prevent mass assignment
+- SQL injection prevented by Kysely parameterized queries
+- Internal errors hidden from client; sensitive data redacted from logs
+- SERIALIZABLE isolation for critical inventory operations
 
-- **Passwords:** Argon2id — never logged or returned
-- **Tokens:** Access (short-lived JWT) + Refresh (opaque, rotative, revocable, stored as SHA-256)
-- **Cookies:** HttpOnly, SameSite=Strict, Secure in production
-- **Rate Limiting:** Global (120 req/min) + stricter for login
-- **CORS:** Whitelist-based
-- **Input Validation:** Closed schemas prevent mass assignment
-- **SQL Injection:** Prevented by Kysely parameterized queries
-- **Error Handling:** Internal errors hidden from client; sensitive data redacted from logs
-- **Database:** Foreign keys, CHECK constraints, unique indexes, transactions, SERIALIZABLE isolation for critical operations
-
----
-
-## 📦 Getting Started
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 22+
-- PostgreSQL 17 (or Docker)
-- npm
+- Node.js 22+, PostgreSQL 17 (or Docker), npm
 
 ### Quick Start
 
 ```bash
-# Clone
 git clone https://github.com/he-code/siare-backend.git
 cd siare-backend
-
-# Install dependencies
 npm install
-
-# Set up environment
 cp .env.example .env
-# Edit .env with your database credentials and secrets
-
-# Start PostgreSQL (optional — Docker)
+# Edit .env with your database credentials
 docker compose up -d
-
-# Run migrations
 npm run db:migrate
-
-# Seed admin user
 npm run db:seed
-
-# Start development server
 npm run dev
 ```
 
@@ -146,69 +116,16 @@ npm run dev
 | `npm run db:migrate`   | Run database migrations                             |
 | `npm run db:seed`      | Seed admin user                                     |
 
----
+## API Documentation
 
-## 🐳 Docker
-
-```bash
-docker compose up -d    # Start PostgreSQL
-docker build -t siare-backend . && docker run -p 3000:3000 siare-backend
-```
-
----
-
-## 📄 API Documentation
-
-Interactive OpenAPI docs available at:
+Interactive OpenAPI docs at `/docs`:
 
 - **Production:** [siare-backend-production.up.railway.app/docs](https://siare-backend-production.up.railway.app/docs)
 - **Local:** `http://localhost:3000/docs`
 
-### API Modules
-
-- `POST /api/v1/auth/login` — Login with email & password
-- `POST /api/v1/auth/refresh` — Rotate refresh token
-- `POST /api/v1/auth/logout` — Revoke refresh token
-- `GET  /api/v1/auth/me` — Current user profile
-- `CRUD /api/v1/users` — User management (admin only)
-- `CRUD /api/v1/instituciones` — Institutions
-- `CRUD /api/v1/lideres` — Leaders
-- `CRUD /api/v1/materiales` — Materials
-- `POST /api/v1/actas-ingreso/:id/emitir` — Issue receipt act
-- `POST /api/v1/actas-entrega/:id/emitir` — Issue delivery act
-- `GET  /api/v1/inventario/existencias` — Current stock
-- `GET  /api/v1/inventario/alertas-bajo-stock` — Low stock alerts
-
----
-
-## 🧪 Testing
-
-```bash
-npm run test
-```
-
-Covers PDF generation, PDF format validation, page count verification, and critical service logic.
-
----
-
-## 🚀 Deployment
+## Deployment
 
 | Service  | Platform | URL                                                                                             |
 | -------- | -------- | ----------------------------------------------------------------------------------------------- |
 | Backend  | Railway  | [siare-backend-production.up.railway.app](https://siare-backend-production.up.railway.app/docs) |
 | Frontend | Vercel   | [siare-frontend.vercel.app](https://siare-frontend.vercel.app/)                                 |
-
----
-
-## 🗺 Roadmap
-
-- [ ] Increase test coverage
-- [ ] Monitoring & metrics
-- [ ] New administrative modules
-- [ ] Performance optimization for large datasets
-
----
-
-<div align="center">
-  Built with ❤️ for educational administration
-</div>
