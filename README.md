@@ -28,15 +28,15 @@ SIARE digitaliza procesos administrativos educativos: control de materiales, mov
 
 ## ✨ Key Features
 
-| Feature | Details |
-|---------|---------|
-| **Auth & Sessions** | JWT access tokens + refresh tokens rotativos y revocables (SHA-256), contraseñas con Argon2id, cookies HttpOnly/SameSite/Secure |
-| **RBAC** | 3 roles (`administrador`, `asistente_actas`, `consulta`) verificados por ruta |
-| **Inventory Management** | Control de existencias con alertas de stock bajo, movimientos trazables |
-| **Acts (Receipt/Delivery)** | Borradores, emisión con transacciones SERIALIZABLE, anulación con movimientos compensatorios |
-| **PDF Generation** | Documentos oficiales formateados con PDFKit |
-| **Audit Trail** | Bitácora de accesos y mutaciones sensibles |
-| **API Documentation** | OpenAPI interactiva en `/docs` |
+| Feature                     | Details                                                                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Auth & Sessions**         | JWT access tokens + refresh tokens rotativos y revocables (SHA-256), contraseñas con Argon2id, cookies HttpOnly/SameSite/Secure |
+| **RBAC**                    | 3 roles (`administrador`, `asistente_actas`, `consulta`) verificados por ruta                                                   |
+| **Inventory Management**    | Control de existencias con alertas de stock bajo, movimientos trazables                                                         |
+| **Acts (Receipt/Delivery)** | Borradores, emisión con transacciones SERIALIZABLE, anulación con movimientos compensatorios                                    |
+| **PDF Generation**          | Documentos oficiales formateados con PDFKit                                                                                     |
+| **Audit Trail**             | Bitácora de accesos y mutaciones sensibles                                                                                      |
+| **API Documentation**       | OpenAPI interactiva en `/docs`                                                                                                  |
 
 ---
 
@@ -63,20 +63,20 @@ API REST desacoplada con módulos independientes por dominio. Base de datos como
 
 ## 🛠 Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Runtime** | Node.js 22+ |
-| **Language** | TypeScript (strict mode, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`) |
-| **Framework** | Fastify 5 |
-| **Database** | PostgreSQL 17 + Kysely (query builder tipado) |
-| **Validation** | TypeBox (schemas cerrados, `additionalProperties: false`) |
-| **Auth** | @fastify/jwt, @fastify/cookie, Argon2id |
-| **PDF** | PDFKit |
-| **Testing** | Vitest |
-| **Linting** | ESLint 10 + typescript-eslint |
-| **Formatting** | Prettier |
-| **Infra** | Docker, GitHub Actions CI |
-| **Deploy** | Railway |
+| Layer          | Technology                                                                         |
+| -------------- | ---------------------------------------------------------------------------------- |
+| **Runtime**    | Node.js 22+                                                                        |
+| **Language**   | TypeScript (strict mode, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`) |
+| **Framework**  | Fastify 5                                                                          |
+| **Database**   | PostgreSQL 17 + Kysely (query builder tipado)                                      |
+| **Validation** | TypeBox (schemas cerrados, `additionalProperties: false`)                          |
+| **Auth**       | @fastify/jwt, @fastify/cookie, Argon2id                                            |
+| **PDF**        | PDFKit                                                                             |
+| **Testing**    | Vitest                                                                             |
+| **Linting**    | ESLint 10 + typescript-eslint                                                      |
+| **Formatting** | Prettier                                                                           |
+| **Infra**      | Docker, GitHub Actions CI                                                          |
+| **Deploy**     | Railway                                                                            |
 
 **CI Pipeline:** `format:check` → `typecheck` → `lint` → `test` → `build` → `audit`
 
@@ -133,18 +133,18 @@ npm run dev
 
 ### Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start dev server with hot reload |
-| `npm run build` | Compile TypeScript |
-| `npm start` | Start production server |
-| `npm run test` | Run tests |
-| `npm run lint` | Lint codebase |
-| `npm run format:check` | Check formatting |
-| `npm run typecheck` | Type-check without emitting |
-| `npm run check` | Full quality gate (typecheck + lint + test + build) |
-| `npm run db:migrate` | Run database migrations |
-| `npm run db:seed` | Seed admin user |
+| Script                 | Description                                         |
+| ---------------------- | --------------------------------------------------- |
+| `npm run dev`          | Start dev server with hot reload                    |
+| `npm run build`        | Compile TypeScript                                  |
+| `npm start`            | Start production server                             |
+| `npm run test`         | Run tests                                           |
+| `npm run lint`         | Lint codebase                                       |
+| `npm run format:check` | Check formatting                                    |
+| `npm run typecheck`    | Type-check without emitting                         |
+| `npm run check`        | Full quality gate (typecheck + lint + test + build) |
+| `npm run db:migrate`   | Run database migrations                             |
+| `npm run db:seed`      | Seed admin user                                     |
 
 ---
 
@@ -193,10 +193,10 @@ Covers PDF generation, PDF format validation, page count verification, and criti
 
 ## 🚀 Deployment
 
-| Service | Platform | URL |
-|---------|----------|-----|
-| Backend | Railway | [siare-backend-production.up.railway.app](https://siare-backend-production.up.railway.app/docs) |
-| Frontend | Vercel | [siare-frontend.vercel.app](https://siare-frontend.vercel.app/) |
+| Service  | Platform | URL                                                                                             |
+| -------- | -------- | ----------------------------------------------------------------------------------------------- |
+| Backend  | Railway  | [siare-backend-production.up.railway.app](https://siare-backend-production.up.railway.app/docs) |
+| Frontend | Vercel   | [siare-frontend.vercel.app](https://siare-frontend.vercel.app/)                                 |
 
 ---
 
