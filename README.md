@@ -1,266 +1,214 @@
+<div align="center">
+
 # SIARE Backend
 
-API REST para la gestión institucional de inventario y actas administrativas.
+**Institutional Educational Resource Administration System**
 
-SIARE (Sistema Institucional de Administración de Recursos Educativos) es una solución Full Stack orientada a digitalizar procesos relacionados con el control de materiales, movimientos de inventario y generación de documentación administrativa.
+API REST segura, modular y escalable para la gestión de inventario y actas administrativas.
 
-El backend proporciona servicios para gestionar usuarios, permisos, instituciones, materiales y actas, manteniendo una arquitectura desacoplada del frontend y aplicando controles de seguridad, validación y trazabilidad.
+[![CI](https://github.com/he-code/siare-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/he-code/siare-backend/actions/workflows/ci.yml)
+![Node](https://img.shields.io/badge/node-22%2B-339933?logo=node.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/typescript-6%2B-3178C6?logo=typescript&logoColor=white)
+![Fastify](https://img.shields.io/badge/fastify-5-000000?logo=fastify&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/postgresql-17-4169E1?logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)
+![OpenAPI](https://img.shields.io/badge/openapi-3.1-6BA539?logo=openapi-initiative&logoColor=white)
 
----
-
-## 🚀Características principales
-
-- Gestión de usuarios y autenticación.
-- Control de acceso basado en roles (RBAC).
-- Administración de instituciones.
-- Gestión de materiales e inventario.
-- Registro de actas de ingreso.
-- Registro de actas de entrega-recepción.
-- Generación de documentos PDF.
-- Control de movimientos administrativos.
-- Validación estricta de datos de entrada.
-- Registro de acciones sensibles mediante bitácora.
-- API documentada mediante OpenAPI.
+</div>
 
 ---
 
-## 🏗 Arquitectura
+## 📋 Overview
 
-SIARE Backend está construido como una API REST independiente del frontend, permitiendo una arquitectura desacoplada y escalable.
+SIARE digitaliza procesos administrativos educativos: control de materiales, movimientos de inventario, emisión de actas oficiales y generación de documentos PDF. Construido como una **API REST independiente del frontend**, prioriza **seguridad, integridad de datos y mantenibilidad**.
 
-La aplicación está organizada por módulos funcionales:
+> Frontend: [siare-frontend](https://github.com/he-code/siare-frontend) | Demo: [siare-frontend.vercel.app](https://siare-frontend.vercel.app/)
 
-```text
+---
+
+## ✨ Key Features
+
+| Feature | Details |
+|---------|---------|
+| **Auth & Sessions** | JWT access tokens + refresh tokens rotativos y revocables (SHA-256), contraseñas con Argon2id, cookies HttpOnly/SameSite/Secure |
+| **RBAC** | 3 roles (`administrador`, `asistente_actas`, `consulta`) verificados por ruta |
+| **Inventory Management** | Control de existencias con alertas de stock bajo, movimientos trazables |
+| **Acts (Receipt/Delivery)** | Borradores, emisión con transacciones SERIALIZABLE, anulación con movimientos compensatorios |
+| **PDF Generation** | Documentos oficiales formateados con PDFKit |
+| **Audit Trail** | Bitácora de accesos y mutaciones sensibles |
+| **API Documentation** | OpenAPI interactiva en `/docs` |
+
+---
+
+## 🏗 Architecture
+
+```
 src/
 ├── modules/
-│   ├── auth/
-│   ├── users/
-│   ├── materials/
-│   ├── institutions/
-│   ├── acts/
-│   └── ...
-├── database/
-├── middleware/
-├── utils/
-└── app/
+│   ├── auth/        🔐 Autenticación y sesiones
+│   ├── users/       👥 Gestión de usuarios
+│   ├── acts/        📄 Actas de ingreso y entrega
+│   ├── inventory/   📦 Inventario y movimientos
+│   └── catalogs/    📁 Categorías, unidades, instituciones
+├── core/            ⚙️ Roles, paginación, errores
+├── http/            🛡️ Guards, esquemas de validación
+├── db/              🗄️ Conexión y tipos de base de datos
+├── config/          🔧 Variables de entorno
+└── app/             🚀 Bootstrap de Fastify
 ```
 
-El frontend consume los servicios mediante endpoints REST.
+API REST desacoplada con módulos independientes por dominio. Base de datos como fuente de verdad con PostgreSQL relacional.
 
 ---
 
-## 🛠 Tecnologías utilizadas
+## 🛠 Tech Stack
 
-### Backend
+| Layer | Technology |
+|-------|-----------|
+| **Runtime** | Node.js 22+ |
+| **Language** | TypeScript (strict mode, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`) |
+| **Framework** | Fastify 5 |
+| **Database** | PostgreSQL 17 + Kysely (query builder tipado) |
+| **Validation** | TypeBox (schemas cerrados, `additionalProperties: false`) |
+| **Auth** | @fastify/jwt, @fastify/cookie, Argon2id |
+| **PDF** | PDFKit |
+| **Testing** | Vitest |
+| **Linting** | ESLint 10 + typescript-eslint |
+| **Formatting** | Prettier |
+| **Infra** | Docker, GitHub Actions CI |
+| **Deploy** | Railway |
+
+**CI Pipeline:** `format:check` → `typecheck` → `lint` → `test` → `build` → `audit`
+
+---
+
+## 🔐 Security Highlights
+
+- **Passwords:** Argon2id — never logged or returned
+- **Tokens:** Access (short-lived JWT) + Refresh (opaque, rotative, revocable, stored as SHA-256)
+- **Cookies:** HttpOnly, SameSite=Strict, Secure in production
+- **Rate Limiting:** Global (120 req/min) + stricter for login
+- **CORS:** Whitelist-based
+- **Input Validation:** Closed schemas prevent mass assignment
+- **SQL Injection:** Prevented by Kysely parameterized queries
+- **Error Handling:** Internal errors hidden from client; sensitive data redacted from logs
+- **Database:** Foreign keys, CHECK constraints, unique indexes, transactions, SERIALIZABLE isolation for critical operations
+
+---
+
+## 📦 Getting Started
+
+### Prerequisites
 
 - Node.js 22+
-- TypeScript (modo estricto)
-- Fastify
+- PostgreSQL 17 (or Docker)
+- npm
 
-### Base de datos
-
-- PostgreSQL
-- Kysely (SQL Query Builder)
-
-### Generación de documentos
-
-- PDFKit
-
-### Calidad y pruebas
-
-- Vitest
-- ESLint
-- Prettier
-
-### Infraestructura
-
-- Docker
-
----
-
-## 🔐 Seguridad
-
-El sistema implementa múltiples capas de seguridad para proteger la información y garantizar la integridad de los datos.
-
-### Autenticación
-
-- Contraseñas protegidas mediante **Argon2id**.
-- Access Tokens de corta duración.
-- Refresh Tokens opacos, rotativos y revocables.
-- Refresh Tokens almacenados como **SHA-256**.
-- Cookies **HttpOnly**, **SameSite=Strict** y **Secure** en producción.
-
-### Autorización
-
-El sistema implementa **RBAC (Role-Based Access Control)**.
-
-| Rol | Descripción |
-|------|-------------|
-| `admin` | Administración completa del sistema. |
-| `asistente_actas` | Gestión operativa de actas e inventario. |
-| `consulta` | Acceso de solo lectura. |
-
-Cada petición verifica el estado y permisos actuales del usuario.
-
-### Protección de la API
-
-- Rate limiting global.
-- Rate limiting específico para autenticación.
-- CORS mediante lista blanca.
-- Cabeceras HTTP de seguridad.
-- Límite del tamaño de las peticiones.
-- Validación estricta de esquemas (`additionalProperties: false`).
-- Prevención de Mass Assignment.
-- Consultas SQL parametrizadas mediante Kysely.
-- Ocultamiento de errores internos.
-- Redacción automática de cookies, tokens y contraseñas en los logs.
-
-### Integridad de datos
-
-La base de datos utiliza:
-
-- Claves foráneas.
-- Restricciones `CHECK`.
-- Índices únicos.
-- Transacciones.
-- Restricciones de integridad referencial.
-
----
-
-## 📚 Documentación de la API
-
-La API cuenta con documentación interactiva mediante OpenAPI.
-
-**Producción**
-
-https://siare-backend-production.up.railway.app/docs
-
----
-
-## 📄 Generación de documentos
-
-El sistema genera documentos oficiales en formato PDF mediante **PDFKit**.
-
-Actualmente soporta:
-
-- Actas de ingreso.
-- Actas de entrega-recepción.
-
-Los documentos mantienen un formato consistente y validado para procesos administrativos.
-
----
-
-## 🧪 Pruebas automatizadas
-
-El proyecto utiliza **Vitest** para validar procesos críticos.
-
-Entre las pruebas implementadas se encuentran:
-
-- Generación correcta de documentos PDF.
-- Validación del formato PDF.
-- Verificación del número de páginas generadas.
-- Pruebas de servicios críticos del sistema.
-
-Ejecutar pruebas:
+### Quick Start
 
 ```bash
-npm run test
-```
-
----
-
-## ⚙️ Instalación
-
-### Requisitos
-
-- Node.js 22 o superior.
-- PostgreSQL.
-- Docker (opcional).
-
-### Clonar el repositorio
-
-```bash
+# Clone
 git clone https://github.com/he-code/siare-backend.git
-
 cd siare-backend
-```
 
-### Instalar dependencias
-
-```bash
+# Install dependencies
 npm install
-```
 
-### Configurar variables de entorno
+# Set up environment
+cp .env.example .env
+# Edit .env with your database credentials and secrets
 
-Crear un archivo `.env`.
+# Start PostgreSQL (optional — Docker)
+docker compose up -d
 
-Ejemplo:
+# Run migrations
+npm run db:migrate
 
-```env
-DATABASE_URL=
-JWT_ACCESS_SECRET=
-COOKIE_SECURE=false
-CORS_ORIGINS=
-```
+# Seed admin user
+npm run db:seed
 
----
-
-## ▶️ Ejecutar el proyecto
-
-Modo desarrollo:
-
-```bash
+# Start development server
 npm run dev
 ```
 
-Compilar:
+### Available Scripts
 
-```bash
-npm run build
-```
-
-Producción:
-
-```bash
-npm start
-```
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start dev server with hot reload |
+| `npm run build` | Compile TypeScript |
+| `npm start` | Start production server |
+| `npm run test` | Run tests |
+| `npm run lint` | Lint codebase |
+| `npm run format:check` | Check formatting |
+| `npm run typecheck` | Type-check without emitting |
+| `npm run check` | Full quality gate (typecheck + lint + test + build) |
+| `npm run db:migrate` | Run database migrations |
+| `npm run db:seed` | Seed admin user |
 
 ---
 
 ## 🐳 Docker
 
-El proyecto incluye configuración para ejecutar la aplicación mediante Docker, facilitando la creación de entornos consistentes entre desarrollo y producción.
+```bash
+docker compose up -d    # Start PostgreSQL
+docker build -t siare-backend . && docker run -p 3000:3000 siare-backend
+```
 
 ---
 
-## 🚀 Despliegue
+## 📄 API Documentation
 
-### Backend
+Interactive OpenAPI docs available at:
 
-Railway
+- **Production:** [siare-backend-production.up.railway.app/docs](https://siare-backend-production.up.railway.app/docs)
+- **Local:** `http://localhost:3000/docs`
 
-https://siare-backend-production.up.railway.app/docs
+### API Modules
 
-### Frontend relacionado
+- `POST /api/v1/auth/login` — Login with email & password
+- `POST /api/v1/auth/refresh` — Rotate refresh token
+- `POST /api/v1/auth/logout` — Revoke refresh token
+- `GET  /api/v1/auth/me` — Current user profile
+- `CRUD /api/v1/users` — User management (admin only)
+- `CRUD /api/v1/instituciones` — Institutions
+- `CRUD /api/v1/lideres` — Leaders
+- `CRUD /api/v1/materiales` — Materials
+- `POST /api/v1/actas-ingreso/:id/emitir` — Issue receipt act
+- `POST /api/v1/actas-entrega/:id/emitir` — Issue delivery act
+- `GET  /api/v1/inventario/existencias` — Current stock
+- `GET  /api/v1/inventario/alertas-bajo-stock` — Low stock alerts
 
-Repositorio:
+---
 
-https://github.com/he-code/siare-frontend
+## 🧪 Testing
 
-Aplicación:
+```bash
+npm run test
+```
 
-https://siare-frontend.vercel.app/
+Covers PDF generation, PDF format validation, page count verification, and critical service logic.
 
 ---
 
-## 📌 Hoja de ruta
+## 🚀 Deployment
 
-Algunas mejoras previstas para futuras versiones:
-
-- Incrementar la cobertura de pruebas automatizadas.
-- Incorporar monitoreo y métricas.
-- Nuevos módulos administrativos.
-- Optimización del rendimiento para grandes volúmenes de información.
+| Service | Platform | URL |
+|---------|----------|-----|
+| Backend | Railway | [siare-backend-production.up.railway.app](https://siare-backend-production.up.railway.app/docs) |
+| Frontend | Vercel | [siare-frontend.vercel.app](https://siare-frontend.vercel.app/) |
 
 ---
+
+## 🗺 Roadmap
+
+- [ ] Increase test coverage
+- [ ] Monitoring & metrics
+- [ ] New administrative modules
+- [ ] Performance optimization for large datasets
+
+---
+
+<div align="center">
+  Built with ❤️ for educational administration
+</div>
